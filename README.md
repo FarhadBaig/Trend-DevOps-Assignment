@@ -1,91 +1,380 @@
-DevOps Practice Project – Dist Directory
+\# Trend — DevOps CI/CD and AWS EKS Deployment
 
-This repository contains the production-ready build files (dist folder) for DevOps practice and deployment exercises.
 
-It is intentionally structured to help learners focus on CI/CD pipelines, hosting, containerization, and infrastructure setup rather than application development.
 
-📁 What This Repository Contains
+\## Project Overview
 
-dist/ – Compiled and production-ready static files
 
-HTML
 
-CSS
+This project demonstrates an end-to-end DevOps workflow for deploying the Trend static web application using Docker, Docker Hub, Jenkins, Terraform, AWS EC2, Amazon EKS, and Kubernetes.
 
-JavaScript
 
-Assets (images, fonts, etc.)
 
-These files are ready to deploy to:
+The application is served by Nginx on port `3000`. Jenkins builds and pushes the Docker image, while Kubernetes runs two replicas behind an AWS Network Load Balancer.
 
-Web servers (Nginx / Apache)
 
-Cloud platforms (AWS S3, Azure Blob, GCP Storage)
 
-Containerized environments (Docker + Nginx)
+\## Architecture
 
-Kubernetes clusters
 
-CI/CD pipeline demonstrations
 
-🎯 Purpose of This Repository
+GitHub → Jenkins CI Pipeline → Docker Build → Docker Hub → Amazon EKS → Kubernetes Deployment → AWS Network Load Balancer → Users
 
-This repository is designed for:
 
-DevOps beginners
 
-CI/CD practice
+Infrastructure is provisioned using Terraform.
 
-Deployment pipeline testing
 
-Docker & Kubernetes deployment exercises
 
-Web server configuration practice
+\## Technologies Used
 
-Reverse proxy and load balancer setup
 
-The goal is to simulate real-world deployment scenarios using already built application files.
 
-❓ Why is there NO package.json?
+\- AWS EC2 — Jenkins server
 
-You may notice that this repository does not include:
+\- AWS VPC, subnets, Internet Gateway, and route tables
 
-package.json
+\- AWS IAM — roles and permissions
 
-node_modules
+\- Amazon EKS — managed Kubernetes
 
-Source code (src/)
+\- Amazon EC2 — Kubernetes worker node
 
-Build tools configuration
+\- AWS Network Load Balancer — external application access
 
-✅ Reason:
+\- Docker and Docker Hub — containerization and image registry
 
-This repository only contains the final production build output (dist), not the development source code.
+\- Jenkins — CI pipeline
 
-In a typical project:
+\- Terraform — Infrastructure as Code
 
-Developers write source code.
+\- Kubernetes — Deployment and Service
 
-The project is built using tools like:
+\- Nginx — static application web server
 
-Node.js
+\- Git and GitHub — source control
 
-Webpack
 
-Vite
 
-React (or other frameworks)
+\## Live Application
 
-A dist/ folder is generated.
 
-Only the production build is deployed to servers.
 
-This repository represents step 4 only.
+\*\*Application URL:\*\*
 
-Since this is already the compiled output:
 
-No dependencies are required
 
-No build process is required
+http://a97e17465d4e14ea78df8c1c8f72b6d9-043139bc54d745bd.elb.ap-south-1.amazonaws.com:3000
 
-No package.json is needed
+
+
+The URL is served through an AWS Network Load Balancer. It is available while the required AWS resources remain active.
+
+
+
+\## Docker Hub
+
+
+
+\*\*Image:\*\* `farhadbaig/trend-app`
+
+
+
+\*\*Tags:\*\* `latest` and build-specific tags.
+
+
+
+Docker Hub repository:
+
+https://hub.docker.com/r/farhadbaig/trend-app
+
+
+
+\### Build and Run Locally
+
+
+
+```bash
+
+docker build -t trend-app:1.0 .
+
+docker run -d --name trend-app -p 3000:3000 trend-app:1.0
+
+```
+
+
+
+Open `http://localhost:3000` in a browser.
+
+
+
+\## Jenkins CI Pipeline
+
+
+
+Jenkins is hosted on an AWS EC2 instance. The pipeline is configured to use the GitHub repository and `Jenkinsfile`.
+
+
+
+Pipeline stages:
+
+
+
+1\. Checkout the Git repository.
+
+2\. Verify the Dockerfile and production build files.
+
+3\. Build the Docker image.
+
+4\. Authenticate to Docker Hub using Jenkins credentials.
+
+5\. Push the build-specific image tag and `latest` tag.
+
+
+
+Docker Hub credentials are stored in Jenkins Credentials rather than hard-coded in the pipeline.
+
+
+
+The pipeline completed successfully and pushed the image to Docker Hub.
+
+
+
+\## AWS Infrastructure with Terraform
+
+
+
+Terraform configuration is located in the `terraform/` directory.
+
+
+
+Infrastructure includes:
+
+
+
+\- Custom VPC with CIDR `10.20.0.0/16`
+
+\- Two public subnets across Availability Zones
+
+\- Internet Gateway and routing
+
+\- IAM roles and policies
+
+\- Jenkins EC2 instance and security group
+
+\- Amazon EKS cluster and managed worker node group
+
+
+
+\### Important Configuration
+
+
+
+\- AWS region: `ap-south-1`
+
+\- EKS cluster: `trend-devops-eks`
+
+\- Kubernetes node group: `trend-devops-workers`
+
+\- Kubernetes version: `1.36`
+
+\- Jenkins instance type: `t3.medium`
+
+\- Worker node type: `t3.medium`
+
+
+
+\### Terraform Commands
+
+
+
+Run these commands from the `terraform/` directory after configuring the appropriate AWS CLI profile and local variables:
+
+
+
+```bash
+
+terraform init
+
+terraform fmt -check
+
+terraform validate
+
+terraform plan
+
+```
+
+
+
+Review the plan before applying infrastructure changes. Do not apply a plan that unexpectedly replaces or destroys resources.
+
+
+
+\## Kubernetes Deployment
+
+
+
+Kubernetes manifests are located in `k8s/`.
+
+
+
+\- `k8s/deployment.yaml` — two application replicas, container port `3000`, resource requests and limits, readiness and liveness probes.
+
+\- `k8s/service.yaml` — LoadBalancer Service exposing port `3000`.
+
+
+
+\### Deploy the Application
+
+
+
+Configure access to the EKS cluster:
+
+
+
+```bash
+
+aws eks update-kubeconfig \\
+
+&#x20; --name trend-devops-eks \\
+
+&#x20; --region ap-south-1 \\
+
+&#x20; --profile brain-tasks-paid
+
+```
+
+
+
+Apply the manifests:
+
+
+
+```bash
+
+kubectl apply -f k8s/deployment.yaml
+
+kubectl apply -f k8s/service.yaml
+
+```
+
+
+
+Verify the rollout and resources:
+
+
+
+```bash
+
+kubectl rollout status deployment/trend-app
+
+kubectl get deployments,pods,services
+
+kubectl describe service trend-app-service
+
+```
+
+
+
+The successful deployment had two ready application pods and an externally accessible AWS Network Load Balancer.
+
+
+
+\## AWS Network Load Balancer
+
+
+
+\*\*Type:\*\* Network Load Balancer  
+
+\*\*Region:\*\* `ap-south-1`
+
+
+
+\*\*Load Balancer ARN:\*\*
+
+
+
+`arn:aws:elasticloadbalancing:ap-south-1:395307915231:loadbalancer/net/a97e17465d4e14ea78df8c1c8f72b6d9/043139bc54d745bd`
+
+
+
+Check its status using:
+
+
+
+```bash
+
+aws elbv2 describe-load-balancers \\
+
+&#x20; --profile brain-tasks-paid \\
+
+&#x20; --region ap-south-1
+
+```
+
+
+
+\## Repository Structure
+
+
+
+```text
+
+Trend/
+
+├── dist/
+
+├── k8s/
+
+│   ├── deployment.yaml
+
+│   └── service.yaml
+
+├── screenshots/
+
+├── terraform/
+
+│   ├── eks.tf
+
+│   ├── jenkins.tf
+
+│   ├── main.tf
+
+│   ├── variables.tf
+
+│   └── versions.tf
+
+├── .dockerignore
+
+├── .gitignore
+
+├── Dockerfile
+
+├── Jenkinsfile
+
+└── README.md
+
+```
+
+
+
+\## Screenshots
+
+
+
+The `screenshots/` directory contains evidence of the project workflow, including:
+
+
+
+1\. Git clone and repository setup
+
+2\. Docker image build
+
+3\. Local Docker container
+
+4\. Application in a browser
+
+5\. Docker Hub image push
+
+6\.
+

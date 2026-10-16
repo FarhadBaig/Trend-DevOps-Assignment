@@ -94,6 +94,9 @@ resource "aws_instance" "jenkins" {
   iam_instance_profile        = aws_iam_instance_profile.jenkins.name
   associate_public_ip_address = true
   monitoring                  = false
+  lifecycle {
+    ignore_changes = [ami]
+  }
 
   metadata_options {
     http_endpoint = "enabled"
