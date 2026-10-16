@@ -20,16 +20,16 @@ pipeline {
 
         stage('Verify Project') {
             steps {
-                bat 'git --version'
-                bat 'dir'
-                bat 'if not exist Dockerfile exit /b 1'
-                bat 'if not exist dist\\index.html exit /b 1'
+                sh 'git --version'
+                sh 'test -f Dockerfile'
+                sh 'test -f dist/index.html'
+                sh 'echo "Project files verified."'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .'
+                sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER -t $IMAGE_NAME:latest .'
             }
         }
 
@@ -42,14 +42,12 @@ pipeline {
                         passwordVariable: 'DOCKERHUB_TOKEN'
                     )
                 ]) {
-                    bat '''
-                        @echo off
-                        echo %DOCKERHUB_TOKEN% | docker login -u %DOCKERHUB_USER% --password-stdin
-                        if errorlevel 1 exit /b 1
-                        docker push %IMAGE_NAME%:%BUILD_NUMBER%
-                        if errorlevel 1 exit /b 1
-                        docker push %IMAGE_NAME%:latest
-                        if errorlevel 1 exit /b 1
+                    sh '''
+                        set +x
+                        echo "$DOCKERHUB_TOKEN" | docker login \
+                          -u "$DOCKERHUB_USER" --password-stdin
+                        docker push "$IMAGE_NAME:$BUILD_NUMBER"
+                        docker push "$IMAGE_NAME:latest"
                         docker logout
                     '''
                 }
