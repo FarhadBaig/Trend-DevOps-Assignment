@@ -244,6 +244,56 @@ aws eks update-kubeconfig \\
 
 ```
 
+\## Monitoring
+
+
+
+Metrics Server is installed in the `kube-system` namespace to provide basic Kubernetes CPU and memory metrics.
+
+
+
+Check node resource usage:
+
+
+
+```bash
+
+kubectl top nodes
+
+```
+
+
+
+Check application pod usage:
+
+
+
+```bash
+
+kubectl top pods
+
+```
+
+
+
+Verify Metrics Server:
+
+
+
+```bash
+
+kubectl get pods -n kube-system -l k8s-app=metrics-server
+
+```
+
+
+
+Metrics Server provides current resource usage. It does not provide long-term metrics storage, alerting, or a Prometheus/Grafana dashboard.
+
+
+
+Monitoring evidence is available in `screenshots/13-monitoring.png`.
+
 
 
 Apply the manifests:
